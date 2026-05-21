@@ -1,0 +1,54 @@
+{
+  "generated": "2026-05-20T21:15:34.710Z",
+  "circuit": "credential_verification(8)",
+  "applicationDomain": "Social Media Identity Management",
+  "credentialSchema": "SocialMediaIdentityCredential",
+  "issuer": "did:journal3:social-platform",
+  "attributeSchema": {
+    "0": "age (predicate: >= 18, value private — COPPA/GDPR)",
+    "1": "accountAgeDays (predicate: >= 30, value private — anti-spam)",
+    "2": "verifiedHuman (selectively disclosed — Sybil resistance)",
+    "3": "countryCode (ISO 3166-1 numeric, hidden by default — geo-gating)",
+    "4": "contentTier (0=standard, 1=creator, 2=verified, hidden)",
+    "5": "reserved",
+    "6": "reserved",
+    "7": "reserved"
+  },
+  "zkUseCases": [
+    "Age-gated platform access (COPPA/GDPR): proves age>=18 without storing birthdate",
+    "Sybil resistance: verifiedHuman attribute selectively disclosed",
+    "Ban-evasion prevention: scopeNullifier=Poseidon(userSecret,platformId) stable per (user,platform)"
+  ],
+  "curve": "bn128",
+  "protocol": "groth16",
+  "constraints": 6768,
+  "wires": 6785,
+  "privateInputs": 19,
+  "publicInputs": 7,
+  "outputs": 20,
+  "nPublic": 27,
+  "credentialCommitment": "19988537239581673951632805459636224574540850164158502101308907768098231065027",
+  "scopeNullifier": "5515489373242351432886418541985938384379528019583706510111177820148173672321",
+  "credentialValid": true,
+  "predicateSatisfied": true,
+  "latencyMs": {
+    "totalRuns": 50,
+    "coldStartMs": 649.1,
+    "warmRuns": 49,
+    "warm": {
+      "mean": 414.578,
+      "stdDev": 56.143,
+      "p50": 415.519,
+      "p95": 499.334,
+      "min": 333.637,
+      "max": 555.834
+    }
+  },
+  "gasVerifyProof": 396197,
+  "gasVerifyCredentialProof": 555734,
+  "gasOverhead": 159537,
+  "gasAddTrustedIssuer": 47295,
+  "gasRegisterCredential": 50543,
+  "gasBanUser": 47373,
+  "note": "gasVerifyProof measured by test/ZKVerifier.gas.test.js (10 estimateGas calls, mean). gasVerifyCredentialProof by test/ZKVerifier.fullgas.test.js. Warm latency excludes Run 1 (WASM cold-start). nPublic=27. Rerun 2026-05-21 after selective-disclosure fix and predicateAttributeIndex===0 constraint."
+}

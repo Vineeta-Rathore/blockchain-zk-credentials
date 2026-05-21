@@ -1,0 +1,72 @@
+{
+  "generated": "2026-05-21",
+  "experiment": "Attribute scaling: CredentialVerification(2), (4), (8) -- all circuits fixed 2026-05-21",
+  "note": "All three n values use: pragma circom 2.2.3, mux.c[1]=attribute (raw disclosure), predicateAttributeIndex===0 constraint.",
+  "results": [
+    {
+      "numAttributes": 2,
+      "constraints": 2970,
+      "wires": 2981,
+      "nPublic": 15,
+      "nPubInputs": 7,
+      "nOutputs": 8,
+      "coldStartMs": 601.038,
+      "latencyMs": {
+        "mean": 240.852,
+        "stdDev": 41.051,
+        "p50": 224.509,
+        "p95": 305.207,
+        "min": 184.045,
+        "max": 341.586,
+        "warmRuns": 49
+      },
+      "verifyProofGas": 312581,
+      "proofSizeBytes": 256
+    },
+    {
+      "numAttributes": 4,
+      "constraints": 4239,
+      "wires": 4252,
+      "nPublic": 19,
+      "nPubInputs": 7,
+      "nOutputs": 12,
+      "coldStartMs": 777.018,
+      "latencyMs": {
+        "mean": 313.763,
+        "stdDev": 48.226,
+        "p50": 304.455,
+        "p95": 406.972,
+        "min": 251.306,
+        "max": 414.294,
+        "warmRuns": 49
+      },
+      "verifyProofGas": 340465,
+      "proofSizeBytes": 256
+    },
+    {
+      "numAttributes": 8,
+      "constraints": 6768,
+      "wires": 6785,
+      "nPublic": 27,
+      "nPubInputs": 7,
+      "nOutputs": 20,
+      "coldStartMs": 649.1,
+      "latencyMs": {
+        "mean": 414.578,
+        "stdDev": 56.143,
+        "p50": 415.519,
+        "p95": 499.334,
+        "min": 333.637,
+        "max": 555.834,
+        "warmRuns": 49
+      },
+      "verifyProofGas": 396197,
+      "proofSizeBytes": 256
+    }
+  ],
+  "analysis": {
+    "constraintsPerAttribute": "~633 per additional attribute (n=2 to n=8)",
+    "gasPerPublicSignal_n2_to_n8": 6968,
+    "note_gas_per_signal": "(396197 - 312581) / (27 - 15) = 83616 / 12 = 6968 gas/signal"
+  }
+}

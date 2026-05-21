@@ -1,0 +1,10 @@
+﻿node_modules/
+.env
+*.ptau
+*.zkey
+artifacts/
+cache/
+coverage/
+typechain/
+*.log
+.DS_Store
