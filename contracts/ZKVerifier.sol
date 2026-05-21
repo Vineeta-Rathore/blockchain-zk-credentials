@@ -4,45 +4,24 @@ pragma solidity ^0.8.19;
 import "./Groth16Verifier.sol";
 
 /**
- * @custom:journal JOURNAL 3 — Privacy-Preserving ZK Credential Verification (in progress)
- *
- * Application domain: Social Media Identity Management
- *   Extends Journal 2 (DID-anchored VC + on-chain revocation) by adding a ZK
- *   privacy layer over a SocialMediaIdentityCredential with 8 attributes:
- *     attr[0] age            — COPPA/GDPR: proves age >= 18 without revealing value
- *     attr[1] accountAgeDays — Anti-spam: proves account >= 30 days old
- *     attr[2] verifiedHuman  — Sybil resistance: selectively disclosed (1 = human)
- *     attr[3] countryCode    — Geo-gating: hidden unless compliance requires disclosure
- *     attr[4] contentTier    — Creator status: hidden by default
- *     attr[5..7]             — Reserved for future social media attributes
- *
- * Three ZK use cases this contract enforces on-chain:
- *   1. Age-gated access   — predicateSatisfied proves age >= 18 (EIP-197 pairing check)
- *   2. Sybil resistance   — trustedIssuers[] gates which platforms can issue credentials
- *   3. Ban-evasion proof  — bannedScopeNullifiers[] records Poseidon(userSecret, platformId)
- *                           which is stable across sessions; a banned user cannot generate
- *                           any new valid proof on the same platform, even with a fresh challenge
- *
- * Role: On-chain Groth16 proof verifier wrapper. Adds nullifier registry
- *       (prevents proof replay), trusted-issuer gating, and audit history
- *       on top of the snarkjs-generated Groth16Verifier.
- *
- * STATUS: COMPLETE — _verifyProof() uses a 27-element pubSignals array
- *   after Option A (credentialCommitment public) + Issue 2 (scopeNullifier/platformId) fixes.
- *   nPublic = 27. Signal ordering follows circom output-then-input convention:
- *   Outputs [0-19]: credentialValid, nullifier, attrCommitments[8],
- *                   revealedValues[8], predicateSatisfied, scopeNullifier
- *   Public inputs [20-26]: issuerPublicKey, schemaHash, challenge,
- *                          predicateThreshold, predicateAttributeIndex,
- *                          credentialCommitment, platformId
- *   Credential schema: SocialMediaIdentityCredential
- *   Issuer: did:journal3:social-platform
- *
- * NOT used in Journal 2. Journal 2 uses off-chain Ed25519 verification only.
- *
  * @title ZKVerifier
- * @notice Wraps the snarkjs-generated Groth16Verifier with nullifier registry,
- *         trusted-issuer gating, and audit history.
+ * @notice Wraps the snarkjs-generated Groth16Verifier with nullifier tracking,
+ *         trusted-issuer gating, credential registration, and ban enforcement.
+ *
+ * pubSignals layout (nPublic=27, circom output-then-input ordering):
+ *   [0]     credentialValid
+ *   [1]     nullifier          -- Poseidon(userSecret, nullifierSeed, challenge)
+ *   [2-9]   attributeCommitments[8]
+ *   [10-17] revealedValues[8]
+ *   [18]    predicateSatisfied
+ *   [19]    scopeNullifier     -- Poseidon(userSecret, platformId)
+ *   [20]    issuerPublicKey
+ *   [21]    schemaHash
+ *   [22]    challenge
+ *   [23]    predicateThreshold
+ *   [24]    predicateAttributeIndex
+ *   [25]    credentialCommitment
+ *   [26]    platformId
  */
 contract ZKVerifier {
     Groth16Verifier public immutable groth16;

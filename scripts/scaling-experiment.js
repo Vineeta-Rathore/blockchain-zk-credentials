@@ -1,16 +1,10 @@
-/**
- * Attribute-Scaling Experiment for Journal of Supercomputing Section 6.4
+/*
+ * Attribute-scaling experiment: compile and benchmark CredentialVerification(n)
+ * for n in [2, 4, 8]. Writes per-n artifacts to build/circuits/scaling/ and
+ * a summary to build/circuits/scaling/scaling_results.json.
  *
- * For numAttributes in [2, 4, 8]:
- *   1. Compiles credential_verification_N.circom -> R1CS + WASM
- *   2. Runs Phase 2 trusted setup using existing pot14_final.ptau
- *   3. Exports verification key and Solidity verifier
- *   4. Generates proof and runs latency benchmark (50 runs)
- *   5. Estimates verifier gas via Hardhat
- *
- * Run: node scripts/scaling-experiment.js
- * Outputs: build/circuits/scaling/ directory with per-N subdirectories
- *          build/circuits/scaling/scaling_results.json (citable summary)
+ * Usage: node scripts/scaling-experiment.js
+ * Requires: pot14_final.ptau in project root (see setup-circuit.js).
  */
 
 'use strict';
@@ -304,12 +298,12 @@ async function main() {
             console.log('='.repeat(60));
             const build8 = path.join(ROOT, 'build', 'circuits');
             const existing = JSON.parse(fs.readFileSync(path.join(build8, 'benchmark_report.json'), 'utf8'));
-            const gas8 = 396197;  // confirmed from rerun 2026-05-21
+            const gas8 = 396197;
             results.push({
                 numAttributes: 8,
-                constraints:   6768,  // confirmed from rerun 2026-05-21 (added predicateAttributeIndex===0)
-                wires:         6785,  // confirmed
-                nPublic:       27,    // confirmed from paper
+                constraints:   6768,
+                wires:         6785,
+                nPublic:       27,
                 coldStartMs:   existing.latencyMs.coldStartMs,
                 latencyMs:     existing.latencyMs.warm,
                 verifyProofGas: gas8,

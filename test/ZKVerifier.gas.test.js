@@ -1,15 +1,4 @@
-/**
- * @journal JOURNAL 3 — Privacy-Preserving ZK Credential Verification (in progress)
- *
- * Role: On-chain gas benchmark for Groth16Verifier.verifyProof().
- *   Measures gas cost of BN128 pairing check (target: < 500,000 gas).
- *
- * STATUS: VALID — Uses REAL proof artifacts from the compiled credential_verification circuit
- *   (PhD/build/circuits/proof.json, PhD/build/circuits/public.json).
- *   Measures gas cost of BN128 pairing check for nPublic=27.
- *
- * NOT part of Journal 2.
- */
+// Gas benchmark for Groth16Verifier.verifyProof() using proof artifacts from build/circuits/.
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
