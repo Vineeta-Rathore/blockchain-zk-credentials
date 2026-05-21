@@ -1,11 +1,4 @@
-/*
- * Unit tests for DIDRegistry.sol.
- * Covers DID lifecycle (create/update/deactivate/reactivate), key rotation,
- * controller transfer, revocation registry, admin functions, and edge cases.
- * Gas measurement: createDID = 346,878 gas.
- *
- * Run: npx hardhat test test/DIDRegistry.test.js
- */
+// Unit tests for DIDRegistry.sol: lifecycle, key rotation, revocation, and edge cases.
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");

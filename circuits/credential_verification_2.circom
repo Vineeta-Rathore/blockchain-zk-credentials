@@ -4,58 +4,7 @@ include "circomlib/circuits/poseidon.circom";
 include "circomlib/circuits/comparators.circom";
 include "circomlib/circuits/mux1.circom";
 
-/**
- * @journal JOURNAL 3 — Privacy-Preserving ZK Credential Verification (in progress)
- *
- * Application domain: Social Media Identity Management
- *   Extends Journal 2 (DID-anchored VC + on-chain revocation) with a ZK
- *   privacy layer. The 8 circuit attributes map to the SocialMediaIdentityCredential
- *   schema used across this codebase:
- *     attr[0] age            — COPPA/GDPR age-gated access (predicate: >= 18)
- *     attr[1] accountAgeDays — anti-spam: proves account >= 30 days (predicate)
- *     attr[2] verifiedHuman  — Sybil resistance (selectively disclosed)
- *     attr[3] countryCode    — geo-gating (ISO 3166-1 numeric, hidden by default)
- *     attr[4] contentTier    — creator/verified status (hidden by default)
- *     attr[5..7]             — reserved for future social media attributes
- *
- * Role: Main ZK circuit. Proves W3C VC credential validity and selective
- *       attribute disclosure using Groth16 over BN128, Poseidon hashing,
- *       and a challenge-bound nullifier (replay protection).
- *
- * STATUS: HARDENED — Option A + Issue 2 (ban evasion) + CB2 (credentialSalt) fixes applied.
- *   credentialHash (private) replaced by credentialCommitment (PUBLIC).
- *   credentialSalt (PRIVATE) added to prevent offline dictionary attacks on commitment.
- *   credentialCommitment = Poseidon(issuerPublicKey, credentialSalt, attr[0..7]).
- *   scopeNullifier = Poseidon(userSecret, platformId) added as second public output.
- *   platformId added as public input.
- *   nPublic = 27 (unchanged — credentialSalt is private), constraints updated after recompile.
- *   Outputs [0-19]: credentialValid, nullifier, attrCommitments[8],
- *                   revealedValues[8], predicateSatisfied, scopeNullifier
- *   Public inputs [20-26]: issuerPublicKey, schemaHash, challenge,
- *                          predicateThreshold, predicateAttributeIndex,
- *                          credentialCommitment, platformId
- *
- * Known limitations (to be disclosed in paper §Limitations):
- *   - predicateProof always checks attributes[0] regardless of predicateAttributeIndex;
- *     for the social media use case this is acceptable (age is always attr[0]),
- *     but a general-purpose circuit would use a MUX tree for arbitrary index.
- *   - NullifierCheck (on-circuit) is illustrative with 10 slots; production
- *     double-spend prevention is enforced by ZKVerifier.sol's usedNullifiers mapping.
- *   - scopeNullifier is stable per (user, platform) pair — the platform can link
- *     all proofs from the same user on that platform via scopeNullifier. This is
- *     an intentional trade-off for ban prevention, consistent with Semaphore's design.
- *
- * NOT used in Journal 2. Journal 2 uses Ed25519 off-chain signatures only.
- *
- * CredentialVerification Circuit
- *
- * Implements privacy-preserving credential verification with:
- * - Selective attribute disclosure
- * - Credential validity proof without revealing content
- * - Predicate proofs (e.g., age >= 18 without revealing exact age)
- *
- * PhD Research: Blockchain-based Privacy-Preserving IAM System
- */
+// CredentialVerification(2) -- 2-attribute variant for scaling comparison.
 
 /**
  * IsEqual component - checks if two values are equal

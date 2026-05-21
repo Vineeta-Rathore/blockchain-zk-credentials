@@ -1,12 +1,4 @@
-/*
- * End-to-end VC pipeline tests for the W3C VC Data Model v2.0 / Ed25519 path.
- * 17 tests covering: valid Ed25519 signature verification, Multikey encoding,
- * tampered credentialSubject/issuer/signing-key detection, expired credentials,
- * on-chain revocation, duplicate/unauthorized revocation, and a 100-run
- * latency benchmark (56.86 ms mean, 79.66 ms p95).
- *
- * Run: npx hardhat test test/VerifiableCredential.test.js
- */
+// End-to-end tests for the W3C VC Ed25519 pipeline: issuance, verification, and revocation.
 
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
@@ -17,7 +9,7 @@ const {
 } = require('../src/vc/vc-service');
 const { CredentialVerifierService } = require('../src/vc/verifier-service');
 
-describe('Journal 2 DID + VC credential flow', function () {
+describe('W3C VC credential pipeline', function () {
   let didRegistry;
   let issuer;
   let holder;

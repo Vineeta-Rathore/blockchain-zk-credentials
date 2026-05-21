@@ -1,55 +1,9 @@
-/**
- * @journal JOURNAL 3 — Privacy-Preserving ZK Credential Verification (in progress)
+/*
+ * Generate a SocialMediaIdentityCredential test input, run proof generation,
+ * and write benchmark_report.json with latency statistics.
  *
- * Application domain: Social Media Identity Management
- *   Extends Journal 2 (DID + VC + on-chain revocation) by adding a ZK privacy
- *   layer. Users prove properties of their social media identity credential
- *   without revealing the underlying attribute values.
- *
- * Purpose: Generate a semantically correct SocialMediaIdentityCredential
- *   test_input.json where credentialCommitment = Poseidon(issuerPublicKey,
- *   credentialSalt, attributes[0..7]), producing credentialValid = 1 in the proof. Then run a
- *   latency benchmark (50 runs, warm stats reported separately).
- *
- * Option A fix: credentialHash (private) replaced by credentialCommitment (PUBLIC).
- * Issue 2 fix: scopeNullifier = Poseidon(userSecret, platformId) added as stable
- *   per-(user, platform) output. platformId added as public input.
- *   nPublic = 27 (was 25). pubSignals layout:
- *     [0-19]: credentialValid, nullifier, attrCommitments[8], revealedValues[8],
- *             predicateSatisfied, scopeNullifier
- *     [20-26]: issuerPublicKey, schemaHash, challenge, predicateThreshold,
- *              predicateAttributeIndex, credentialCommitment, platformId
- *
- * Credential schema — SocialMediaIdentityCredential (8 attributes):
- *   attr[0] age            — COPPA/GDPR compliance: prove age >= 18 without
- *                            the platform storing the exact birthdate
- *   attr[1] accountAgeDays — Anti-spam: prove account is established (>= 30 days)
- *                            without revealing creation date
- *   attr[2] verifiedHuman  — Sybil resistance: 1 = passed liveness check, 0 = not
- *                            Selectively disclosed to prove bot-resistance
- *   attr[3] countryCode    — Geo-gating: reveal only when required for compliance
- *   attr[4] contentTier    — Creator status: 0=standard, 1=creator, 2=verified
- *   attr[5] reserved       — Future: follower tier, moderation score, etc.
- *   attr[6] reserved
- *   attr[7] reserved
- *
- * Three social media ZK use cases proved by this circuit:
- *   1. Age-gated access  — predicateSatisfied proves age >= 18 (COPPA/GDPR)
- *                          without revealing exact age
- *   2. Sybil resistance  — verifiedHuman(attr[2]) selectively disclosed;
- *                          nullifier ensures one credential = one platform session
- *   3. Ban-evasion proof — scopeNullifier = Poseidon(userSecret, platformId) is
- *                          stable across sessions; ZKVerifier.sol's bannedScopeNullifiers
- *                          mapping blocks any future proof from a banned user on that platform
- *
- * Requires: circomlibjs (Poseidon), snarkjs (groth16)
- * Run: node scripts/generate-test-input.js
- *
- * Outputs:
- *   build/circuits/test_input.json     — social media credential input
- *   build/circuits/proof.json          — Groth16 proof (credentialValid = 1)
- *   build/circuits/public.json         — 27 public signals
- *   build/circuits/benchmark_report.json — all citable metrics
+ * Usage: node scripts/generate-test-input.js
+ * Requires: build/circuits/ artifacts from setup-circuit.js
  */
 
 'use strict';
@@ -152,24 +106,19 @@ async function main() {
     for (const f of [WASM, ZKEY, VKEY]) {
         if (!fs.existsSync(f)) {
             console.error(`Missing: ${f}`);
-            console.error('Run the trusted setup first (see JOURNALS.md Step 2-3).');
+            console.error('Run setup-circuit.js first to generate circuit artifacts.');
             process.exit(1);
         }
     }
 
     console.log('='.repeat(60));
-    console.log('  Journal 3 — ZK Test Input Generator + Latency Benchmark');
+    console.log('  ZK Credential — Test Input Generator + Latency Benchmark');
     console.log('='.repeat(60));
 
-    // 2. Build Poseidon and compute:
-    //    credentialCommitment = Poseidon(issuerPublicKey, credentialSalt, attributes[8])  [CB2 fix]
-    //    scopeNullifier       = Poseidon(userSecret, platformId)                          [Issue 2 fix]
     console.log('\n[1/4] Computing Poseidon hashes (credentialCommitment + scopeNullifier)...');
     const poseidon = await buildPoseidon();
     const F = poseidon.F;
 
-    // credentialCommitment: Poseidon(10) with inputs [issuerPublicKey, credentialSalt, attr0..7]
-    // credentialSalt is a high-entropy issuer-generated nonce; prevents offline dictionary attacks.
     const credCommitInputs = [
         toBigInt(CREDENTIAL.issuerPublicKey),
         toBigInt(CREDENTIAL.credentialSalt),
@@ -177,7 +126,6 @@ async function main() {
     ];
     const credentialCommitment = F.toString(poseidon(credCommitInputs));
 
-    // scopeNullifier: Poseidon(2) with inputs [userSecret, platformId]
     const scopeInputs = [
         toBigInt(CREDENTIAL.userSecret),
         toBigInt(CREDENTIAL.platformId),
@@ -185,23 +133,21 @@ async function main() {
     const expectedScopeNullifier = F.toString(poseidon(scopeInputs));
 
     console.log(`    Schema:              SocialMediaIdentityCredential`);
-    console.log(`    Issuer:              did:journal3:social-platform`);
     console.log(`    issuerPublicKey:     ${CREDENTIAL.issuerPublicKey.slice(0, 20)}...`);
     console.log(`    platformId:          ${CREDENTIAL.platformId.slice(0, 20)}...`);
     console.log(`    Attributes:          [age=25, acctAge=90, human=1, country=356, tier=1, 0, 0, 0]`);
     console.log(`    RevealFlags:         [0, 0, 1, 0, 0, 0, 0, 0]  (only verifiedHuman revealed)`);
-    console.log(`    Predicate:           age(attr[0]=25) >= 18  (COPPA/GDPR compliance)`);
+    console.log(`    Predicate:           age(attr[0]=25) >= 18`);
     console.log(`    credentialCommitment: ${credentialCommitment}`);
     console.log(`    scopeNullifier:       ${expectedScopeNullifier}`);
-    console.log('    (credentialValid should = 1 if circuit recomputes same commitment)');
 
-    // 3. Write test_input.json — credentialSalt PRIVATE (CB2), credentialCommitment PUBLIC, platformId PUBLIC
+    // credentialSalt stays private; credentialCommitment and platformId are public inputs
     const input = {
         userSecret:              CREDENTIAL.userSecret,
         attributes:              CREDENTIAL.attributes,
         revealFlags:             CREDENTIAL.revealFlags,
         nullifierSeed:           CREDENTIAL.nullifierSeed,
-        credentialSalt:          CREDENTIAL.credentialSalt,   // private — prevents dictionary attack
+        credentialSalt:          CREDENTIAL.credentialSalt,
         issuerPublicKey:         CREDENTIAL.issuerPublicKey,
         schemaHash:              CREDENTIAL.schemaHash,
         challenge:               CREDENTIAL.challenge,
@@ -352,14 +298,12 @@ async function main() {
         ],
         curve: 'bn128',
         protocol: 'groth16',
-        constraints: 6768,      // confirmed from rerun 2026-05-21 (predicateAttributeIndex===0 constraint)
+        constraints: 6768,
         wires: null,
-        privateInputs: 19,      // userSecret, nullifierSeed, credentialSalt, attributes[8], revealFlags[8]
-        publicInputs: 7,        // issuerPublicKey, schemaHash, challenge, predicateThreshold,
-                                // predicateAttributeIndex, credentialCommitment, platformId
-        outputs: 20,            // credentialValid, nullifier, attrCommitments[8], revealedValues[8],
-                                // predicateSatisfied, scopeNullifier
-        nPublic: 27,            // = publicInputs(7) + outputs(20)
+        privateInputs: 19,
+        publicInputs: 7,
+        outputs: 20,
+        nPublic: 27,
         credentialCommitment,
         scopeNullifier: expectedScopeNullifier,
         credentialValid: credentialValidSignal === '1',
@@ -381,9 +325,9 @@ async function main() {
                 p95:  parseFloat(sAll.p95),
             },
         },
-        gasVerifyProof: 396197,  // confirmed from test/ZKVerifier.gas.test.js (10 estimateGas calls, mean)
-        note: 'gasVerifyProof confirmed by test/ZKVerifier.gas.test.js. ' +
-              'Warm latency excludes Run 1 (WASM cold-start). nPublic=27. Rerun 2026-05-21.',
+        gasVerifyProof: 396197,
+        note: 'gasVerifyProof from test/ZKVerifier.gas.test.js (10 estimateGas calls). ' +
+              'Warm latency excludes Run 1 (WASM cold-start). nPublic=27.',
     };
 
     const reportPath = path.join(BUILD, 'benchmark_report.json');

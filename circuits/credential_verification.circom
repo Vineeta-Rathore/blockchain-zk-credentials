@@ -4,63 +4,26 @@ include "circomlib/circuits/poseidon.circom";
 include "circomlib/circuits/comparators.circom";
 include "circomlib/circuits/mux1.circom";
 
-/**
- * @journal JOURNAL 3 — Privacy-Preserving ZK Credential Verification (in progress)
+/*
+ * CredentialVerification(numAttributes)
  *
- * Application domain: Social Media Identity Management
- *   Extends Journal 2 (DID-anchored VC + on-chain revocation) with a ZK
- *   privacy layer. The 8 circuit attributes map to the SocialMediaIdentityCredential
- *   schema used across this codebase:
- *     attr[0] age            — COPPA/GDPR age-gated access (predicate: >= 18)
- *     attr[1] accountAgeDays — anti-spam: proves account >= 30 days (predicate)
- *     attr[2] verifiedHuman  — Sybil resistance (selectively disclosed)
- *     attr[3] countryCode    — geo-gating (ISO 3166-1 numeric, hidden by default)
- *     attr[4] contentTier    — creator/verified status (hidden by default)
- *     attr[5..7]             — reserved for future social media attributes
+ * Groth16 circuit for W3C Verifiable Credential selective disclosure.
+ * Attributes follow the SocialMediaIdentityCredential schema:
+ *   attr[0] age            -- age-gated access (predicate: >= threshold)
+ *   attr[1] accountAgeDays -- account age predicate
+ *   attr[2] verifiedHuman  -- Sybil resistance (selectively disclosed)
+ *   attr[3] countryCode    -- geo-gating (hidden by default)
+ *   attr[4] contentTier    -- creator status (hidden by default)
+ *   attr[5..7]             -- reserved
  *
- * Role: Main ZK circuit. Proves W3C VC credential validity and selective
- *       attribute disclosure using Groth16 over BN128, Poseidon hashing,
- *       and a challenge-bound nullifier (replay protection).
+ * credentialCommitment = Poseidon(issuerPublicKey, credentialSalt, attr[0..n-1])
+ * scopeNullifier        = Poseidon(userSecret, platformId)  -- stable per (user, platform)
+ * nullifier             = Poseidon(userSecret, nullifierSeed, challenge)  -- per-session
  *
- * STATUS: HARDENED — Option A + Issue 2 (ban evasion) + CB2 (credentialSalt) fixes applied.
- *   credentialHash (private) replaced by credentialCommitment (PUBLIC).
- *   credentialSalt (PRIVATE) added to prevent offline dictionary attacks on commitment.
- *   credentialCommitment = Poseidon(issuerPublicKey, credentialSalt, attr[0..7]).
- *   scopeNullifier = Poseidon(userSecret, platformId) added as second public output.
- *   platformId added as public input.
- *   nPublic = 27 (unchanged — credentialSalt is private), constraints updated after recompile.
- *   Outputs [0-19]: credentialValid, nullifier, attrCommitments[8],
- *                   revealedValues[8], predicateSatisfied, scopeNullifier
- *   Public inputs [20-26]: issuerPublicKey, schemaHash, challenge,
- *                          predicateThreshold, predicateAttributeIndex,
- *                          credentialCommitment, platformId
- *
- * Known limitations (to be disclosed in paper §Limitations):
- *   - predicateProof always checks attributes[0] regardless of predicateAttributeIndex;
- *     for the social media use case this is acceptable (age is always attr[0]),
- *     but a general-purpose circuit would use a MUX tree for arbitrary index.
- *   - NullifierCheck (on-circuit) is illustrative with 10 slots; production
- *     double-spend prevention is enforced by ZKVerifier.sol's usedNullifiers mapping.
- *   - scopeNullifier is stable per (user, platform) pair — the platform can link
- *     all proofs from the same user on that platform via scopeNullifier. This is
- *     an intentional trade-off for ban prevention, consistent with Semaphore's design.
- *
- * NOT used in Journal 2. Journal 2 uses Ed25519 off-chain signatures only.
- *
- * CredentialVerification Circuit
- *
- * Implements privacy-preserving credential verification with:
- * - Selective attribute disclosure
- * - Credential validity proof without revealing content
- * - Predicate proofs (e.g., age >= 18 without revealing exact age)
- *
- * PhD Research: Blockchain-based Privacy-Preserving IAM System
+ * nPublic = 27 for n=8: outputs [0-19], public inputs [20-26].
  */
 
-/**
- * IsEqual component - checks if two values are equal
- * Returns 1 if equal, 0 otherwise
- */
+// Equality check wrapper around circomlib IsZero.
 template IsEqualCustom() {
     signal input in[2];
     signal output out;
@@ -70,11 +33,7 @@ template IsEqualCustom() {
     out <== isz.out;
 }
 
-/**
- * SelectiveDisclosure - reveals attribute only if flag is set
- * If flag = 1: output = raw attribute value (plaintext)
- * If flag = 0: output = 0 (hidden)
- */
+// Selectively reveals an attribute: revealFlag=1 outputs raw value, 0 outputs zero.
 template SelectiveDisclosure() {
     signal input attribute;
     signal input userSecret;
@@ -82,13 +41,10 @@ template SelectiveDisclosure() {
     signal output commitment;
     signal output revealed;
 
-    // Create commitment using Poseidon hash
     component hasher = Poseidon(2);
     hasher.inputs[0] <== attribute;
     hasher.inputs[1] <== userSecret;
 
-    // Use multiplexer to conditionally reveal the raw attribute value
-    // c[0]=0 (hidden), c[1]=attribute (revealed plaintext when revealFlag=1)
     component mux = Mux1();
     mux.c[0] <== 0;
     mux.c[1] <== attribute;
@@ -98,20 +54,15 @@ template SelectiveDisclosure() {
     revealed <== mux.out;
 }
 
-/**
- * RangeProof - proves value >= threshold without revealing value
- * Used for age verification, income thresholds, etc.
- */
+// Proves value >= threshold using GreaterEqThan; value is not revealed.
 template RangeProof(bits) {
     signal input value;
     signal input threshold;
     signal output valid;
 
-    // value - threshold should be >= 0 for value >= threshold
     signal diff;
     diff <== value - threshold;
 
-    // Check if diff >= 0 using GreaterEqThan
     component gte = GreaterEqThan(bits);
     gte.in[0] <== value;
     gte.in[1] <== threshold;
@@ -119,39 +70,31 @@ template RangeProof(bits) {
     valid <== gte.out;
 }
 
-/**
- * Main CredentialVerification Template
- * 
- * Verifies credential authenticity and enables selective disclosure
- * Maximum 8 attributes supported (extendable)
- */
+// Main template. Instantiate with numAttributes=2, 4, or 8.
 template CredentialVerification(numAttributes) {
-    // ========== PRIVATE INPUTS (hidden from verifier) ==========
-    signal input userSecret;               // User's private secret
-    signal input attributes[numAttributes]; // Credential attributes
-    signal input revealFlags[numAttributes]; // Which attributes to reveal (0 or 1)
-    signal input nullifierSeed;            // Prevents double-use of same proof
-    signal input credentialSalt;          // Issuer-generated high-entropy nonce; prevents
-                                           // offline dictionary attacks on credentialCommitment
+    // private
+    signal input userSecret;
+    signal input attributes[numAttributes];
+    signal input revealFlags[numAttributes];
+    signal input nullifierSeed;
+    signal input credentialSalt;  // high-entropy issuer nonce; hardens credentialCommitment against preimage search
 
-    // ========== PUBLIC INPUTS (visible to verifier) ==========
-    signal input issuerPublicKey;          // Issuer's public identifier
-    signal input schemaHash;               // Schema identifier
-    signal input challenge;                // Verifier's random challenge
-    signal input predicateThreshold;       // For range proofs (e.g., age >= 18)
-    signal input predicateAttributeIndex;  // Which attribute to check predicate on
-    // credentialCommitment = Poseidon(issuerPublicKey, credentialSalt, attrs[0..7]) registered on-chain by issuer.
-    // Making this PUBLIC binds the prover to issuer-authorised attributes (Option A fix).
-    signal input credentialCommitment;     // On-chain issuer commitment to (issuerPublicKey, attrs)
-    signal input platformId;              // Platform's stable identifier (for ban prevention)
+    // public inputs
+    signal input issuerPublicKey;
+    signal input schemaHash;
+    signal input challenge;
+    signal input predicateThreshold;
+    signal input predicateAttributeIndex;
+    signal input credentialCommitment;  // Poseidon(issuerPublicKey, credentialSalt, attrs[0..n-1]); registered on-chain by issuer
+    signal input platformId;
 
-    // ========== OUTPUTS ==========
-    signal output credentialValid;         // 1 if credential is valid
-    signal output nullifier;               // Unique proof identifier (per-session, challenge-bound)
-    signal output attributeCommitments[numAttributes]; // Commitments to all attributes
-    signal output revealedValues[numAttributes];       // Revealed attribute values (0 if hidden)
-    signal output predicateSatisfied;      // 1 if predicate is satisfied
-    signal output scopeNullifier;          // Stable per-(user, platform) identifier for ban enforcement
+    // outputs
+    signal output credentialValid;
+    signal output nullifier;
+    signal output attributeCommitments[numAttributes];
+    signal output revealedValues[numAttributes];
+    signal output predicateSatisfied;
+    signal output scopeNullifier;  // Poseidon(userSecret, platformId); stable per (user, platform) for ban enforcement
 
     // ========== CREDENTIAL COMMITMENT VERIFICATION ==========
     // Recompute commitment as Poseidon(issuerPublicKey, credentialSalt, attrs).
