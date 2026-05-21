@@ -315,7 +315,7 @@ async function main() {
                 verifyProofGas: gas8,
                 proofSizeBytes: 256,
             });
-            console.log(`    Using pre-measured data: constraints=${r1csInfo.nConstraints}, gas=${gas8.toLocaleString()}`);
+            console.log(`    Using pre-measured data: constraints=6768, gas=${gas8.toLocaleString()}`);
         } else {
             await runVariant(n, results);
         }

@@ -72,7 +72,7 @@ template IsEqualCustom() {
 
 /**
  * SelectiveDisclosure - reveals attribute only if flag is set
- * If flag = 1: output = attribute commitment
+ * If flag = 1: output = raw attribute value (plaintext)
  * If flag = 0: output = 0 (hidden)
  */
 template SelectiveDisclosure() {
@@ -140,7 +140,7 @@ template CredentialVerification(numAttributes) {
     signal input challenge;                // Verifier's random challenge
     signal input predicateThreshold;       // For range proofs (e.g., age >= 18)
     signal input predicateAttributeIndex;  // Which attribute to check predicate on
-    // credentialCommitment = Poseidon(issuerPublicKey, attrs) registered on-chain by issuer.
+    // credentialCommitment = Poseidon(issuerPublicKey, credentialSalt, attrs[0..7]) registered on-chain by issuer.
     // Making this PUBLIC binds the prover to issuer-authorised attributes (Option A fix).
     signal input credentialCommitment;     // On-chain issuer commitment to (issuerPublicKey, attrs)
     signal input platformId;              // Platform's stable identifier (for ban prevention)

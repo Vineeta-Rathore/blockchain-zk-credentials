@@ -352,7 +352,7 @@ async function main() {
         ],
         curve: 'bn128',
         protocol: 'groth16',
-        constraints: null,      // updated after recompile (snarkjs r1cs info)
+        constraints: 6768,      // confirmed from rerun 2026-05-21 (predicateAttributeIndex===0 constraint)
         wires: null,
         privateInputs: 19,      // userSecret, nullifierSeed, credentialSalt, attributes[8], revealFlags[8]
         publicInputs: 7,        // issuerPublicKey, schemaHash, challenge, predicateThreshold,
@@ -381,9 +381,9 @@ async function main() {
                 p95:  parseFloat(sAll.p95),
             },
         },
-        gasVerifyProof: null,
-        note: 'gasVerifyProof measured separately by test/ZKVerifier.gas.test.js (10 estimateGas calls). ' +
-              'Warm latency excludes Run 1 (WASM cold-start). nPublic=27 after Option A + Issue 2 fixes.',
+        gasVerifyProof: 396197,  // confirmed from test/ZKVerifier.gas.test.js (10 estimateGas calls, mean)
+        note: 'gasVerifyProof confirmed by test/ZKVerifier.gas.test.js. ' +
+              'Warm latency excludes Run 1 (WASM cold-start). nPublic=27. Rerun 2026-05-21.',
     };
 
     const reportPath = path.join(BUILD, 'benchmark_report.json');

@@ -67,7 +67,7 @@ contract ZKVerifier {
         uint256 challenge;
         uint256 predicateThreshold;
         uint256 predicateAttributeIndex;
-        uint256 credentialCommitment;   // Poseidon(issuerPublicKey, attrs) — must be registered by issuer
+        uint256 credentialCommitment;   // Poseidon(issuerPublicKey, credentialSalt, attrs[0..7]) -- must be registered by issuer
         uint256 platformId;             // Platform's stable identifier; bound into scopeNullifier
         uint256 credentialValid;
         uint256 nullifier;
