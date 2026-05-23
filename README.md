@@ -2,11 +2,11 @@
 
 This repository contains the implementation artifacts for the paper:
 
-> **Privacy-Preserving Identity and Access Management using Zero-Knowledge Proofs on Blockchain**
+> **On-Chain Zero-Knowledge Credential Verification for Internet Identity: Gas, Latency, and Scalability**
 > Vineeta Rathore, Manoj Kumar Rawat
-> *Under review — The Journal of Supercomputing (Springer)*
+> *Under review — ACM Transactions on Internet Technology (TOIT)*
 
-Release tag **v1.0.0-jsup** corresponds to the exact artifact set used for all reported benchmarks.
+Release tag **v1.0.0** corresponds to the exact artifact set used for all reported benchmarks.
 
 ---
 
@@ -54,7 +54,7 @@ build/circuits/
 
 ---
 
-## Key Metrics (Table 4, paper Section 6)
+## Key Metrics
 
 | Metric | Value |
 |--------|-------|
@@ -203,9 +203,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 ```bibtex
 @article{rathore2026zkvc,
   author  = {Rathore, Vineeta and Rawat, Manoj Kumar},
-  title   = {Privacy-Preserving Identity and Access Management using
-             Zero-Knowledge Proofs on Blockchain},
-  journal = {The Journal of Supercomputing},
+  title   = {On-Chain Zero-Knowledge Credential Verification for Internet
+             Identity: {Gas}, Latency, and Scalability},
+  journal = {ACM Transactions on Internet Technology},
   year    = {2026},
   note    = {Under review}
 }
