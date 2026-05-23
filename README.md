@@ -2,7 +2,7 @@
 
 This repository contains the implementation artifacts for the paper:
 
-> **On-Chain Zero-Knowledge Credential Verification for Internet Identity: Gas, Latency, and Scalability**
+> **On-Chain Zero-Knowledge Credential Verification for Internet Identity: Gas, Latency, and Attribute Scaling**
 > Vineeta Rathore, Manoj Kumar Rawat
 > *Under review — ACM Transactions on Internet Technology (TOIT)*
 
@@ -209,7 +209,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 @article{rathore2026zkvc,
   author  = {Rathore, Vineeta and Rawat, Manoj Kumar},
   title   = {On-Chain Zero-Knowledge Credential Verification for Internet
-             Identity: {Gas}, Latency, and Scalability},
+             Identity: {Gas}, Latency, and Attribute Scaling},
   journal = {ACM Transactions on Internet Technology},
   year    = {2026},
   note    = {Under review}
