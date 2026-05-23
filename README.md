@@ -6,7 +6,7 @@ This repository contains the implementation artifacts for the paper:
 > Vineeta Rathore, Manoj Kumar Rawat
 > *Under review — ACM Transactions on Internet Technology (TOIT)*
 
-Release tag **v1.0.0** corresponds to the exact artifact set used for all reported benchmarks.
+Release tag **v1.0.0-toit** corresponds to the exact artifact set used for all reported benchmarks.
 
 ---
 
@@ -156,9 +156,14 @@ build/circuits/
    ```
 
 > **Note:** The trusted setup (`.ptau` and `.zkey` files) is not included due to file size.
-> Run `node scripts/setup-circuit.js` to regenerate locally, or download
-> `powersOfTau28_hez_final_14.ptau` from the
-> [Hermez trusted setup repository](https://github.com/iden3/snarkjs#7-prepare-phase-2).
+> Download `powersOfTau28_hez_final_14.ptau` from the
+> [Hermez trusted setup repository](https://github.com/iden3/snarkjs#7-prepare-phase-2),
+> then place it as `build/circuits/pot14_final.ptau`:
+> ```bash
+> mkdir -p build/circuits
+> mv powersOfTau28_hez_final_14.ptau build/circuits/pot14_final.ptau
+> ```
+> Then run `node scripts/setup-circuit.js` to compile the circuit and generate the zkey.
 
 ### Dependency Security Note
 

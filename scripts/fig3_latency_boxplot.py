@@ -1,8 +1,8 @@
 """
 Generates the proof-generation latency figure for CredentialVerification(8).
 
-Loads 49 warm-run measurements from data/latency_raw_n8.json (primary) or
-../PhD/build/circuits/latency_raw_n8.json (fallback). Run 1 (WASM cold-start)
+Loads 49 warm-run measurements from build/circuits/latency_raw_n8.json (primary)
+or scripts/data/latency_raw_n8.json (local override). Run 1 (WASM cold-start)
 is excluded; all statistics are computed from the raw sample array.
 """
 
@@ -15,18 +15,16 @@ import matplotlib.ticker as mticker
 from matplotlib.lines import Line2D
 
 # ── Load actual measured samples ───────────────────────────────────────────────
-# Primary: data/latency_raw_n8.json (self-contained, included with Journal3 repo)
-# Fallback: ../PhD/build/circuits/latency_raw_n8.json (full monorepo layout)
 _here = os.path.dirname(os.path.abspath(__file__))
 _candidates = [
-    os.path.join(_here, 'data', 'latency_raw_n8.json'),
-    os.path.join(_here, '..', 'PhD', 'build', 'circuits', 'latency_raw_n8.json'),
+    os.path.join(_here, '..', 'build', 'circuits', 'latency_raw_n8.json'),  # repo default
+    os.path.join(_here, 'data', 'latency_raw_n8.json'),                      # local override
 ]
 _raw_path = next((p for p in _candidates if os.path.exists(p)), None)
 if _raw_path is None:
     raise FileNotFoundError(
-        "latency_raw_n8.json not found. Expected at data/latency_raw_n8.json "
-        "or ../PhD/build/circuits/latency_raw_n8.json"
+        "latency_raw_n8.json not found. Expected at build/circuits/latency_raw_n8.json. "
+        "Run from the repository root or place the file at scripts/data/latency_raw_n8.json."
     )
 with open(_raw_path) as f:
     _raw = json.load(f)
