@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from matplotlib.lines import Line2D
 
-# ── Load actual measured samples ───────────────────────────────────────────────
+# --- Load actual measured samples ---------------------------------------------
 _here = os.path.dirname(os.path.abspath(__file__))
 _candidates = [
     os.path.join(_here, '..', 'build', 'circuits', 'latency_raw_n8.json'),  # repo default
@@ -51,7 +51,7 @@ print(f"  min  = {VMIN:.3f} ms")
 print(f"  max  = {VMAX:.3f} ms")
 print(f"  cold = {COLD_START:.1f} ms")
 
-# ── Colour palette ─────────────────────────────────────────────────────────────
+# --- Colour palette -----------------------------------------------------------
 C_WARM   = "#2563EB"   # blue
 C_COLD   = "#DC2626"   # red
 C_MEAN   = "#15803D"   # green
@@ -68,7 +68,7 @@ fig, axes = plt.subplots(
     dpi=300
 )
 
-# ── Panel A: Box plot + jitter ─────────────────────────────────────────────────
+# --- Panel A: Box plot + jitter -----------------------------------------------
 ax = axes[0]
 
 bp = ax.boxplot(
@@ -139,7 +139,7 @@ ax.text(
     family="monospace"
 )
 
-# ── Panel B: Empirical CDF ─────────────────────────────────────────────────────
+# --- Panel B: Empirical CDF ---------------------------------------------------
 ax2 = axes[1]
 
 sorted_s = np.sort(samples)
@@ -190,7 +190,7 @@ ax2.yaxis.set_major_formatter(mticker.PercentFormatter(xmax=1, decimals=0))
 ax2.grid(linestyle="--", linewidth=0.5, color="#E5E7EB", zorder=0)
 ax2.spines[["top", "right"]].set_visible(False)
 
-# ── Legend ─────────────────────────────────────────────────────────────────────
+# --- Legend -------------------------------------------------------------------
 legend_handles = [
     Line2D([0], [0], color=C_MEDIAN, linewidth=2.5, label="Median"),
     Line2D([0], [0], color=C_MEAN,   linewidth=2.2, label=f"Mean ({MEAN:.1f} ms)"),
@@ -219,9 +219,17 @@ fig.text(
     ha="center", fontsize=7.5, color="#6B7280"
 )
 
-# ── Save ───────────────────────────────────────────────────────────────────────
-pdf_path = os.path.join(_here, "Figure 3.pdf")
-png_path = os.path.join(_here, "fig3_latency_boxplot.png")
+# --- Save ---------------------------------------------------------------------
+pdf_path  = os.path.join(_here, "Figure 3.pdf")
+png_path  = os.path.join(_here, "fig3_latency_boxplot.png")
+# Also write the filename expected by ACM TOIT main.tex (\includegraphics{fig3.png})
+acm_dir   = os.path.join(_here, '..', 'Journal3', 'ACM TOIT')
+acm_png   = os.path.join(acm_dir, 'fig3.png') if os.path.isdir(acm_dir) else None
+
 fig.savefig(pdf_path, format="pdf", bbox_inches="tight", dpi=300)
 fig.savefig(png_path, format="png", bbox_inches="tight", dpi=300)
-print(f"\nSaved:\n  {pdf_path}\n  {png_path}")
+if acm_png:
+    fig.savefig(acm_png, format="png", bbox_inches="tight", dpi=300)
+    print(f"\nSaved:\n  {pdf_path}\n  {png_path}\n  {acm_png}")
+else:
+    print(f"\nSaved:\n  {pdf_path}\n  {png_path}")
